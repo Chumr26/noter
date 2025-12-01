@@ -153,6 +153,7 @@ export default function NotesListScreen() {
   const renderNote = useCallback(
     ({ item, index }: { item: Note; index: number }) => {
       const isSelected = selectedNoteIds.includes(item.id);
+      const isGridMode = settings.viewMode === 'grid';
       
       return (
         <Animated.View
@@ -160,6 +161,7 @@ export default function NotesListScreen() {
             .duration(300)
             .springify()}
           exiting={FadeOutUp.duration(200)}
+          style={isGridMode && { flex: 1, paddingHorizontal: Spacing.xs }}
         >
           {selectionMode ? (
             <View style={styles.selectionContainer}>
@@ -212,6 +214,7 @@ export default function NotesListScreen() {
       togglePin,
       toggleFavorite,
       settings.hapticsEnabled,
+      settings.viewMode,
       colors.primary,
       colors.textTertiary,
     ]
@@ -343,6 +346,8 @@ export default function NotesListScreen() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={renderEmptyState}
+        numColumns={settings.viewMode === 'grid' ? 2 : 1}
+        key={settings.viewMode} // Force re-render when view mode changes
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
