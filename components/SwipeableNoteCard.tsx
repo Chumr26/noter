@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NoteCard } from './NoteCard';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { HeartAnimation } from './HeartAnimation';
 import { Note } from '@/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Spacing } from '@/constants/theme';
@@ -21,6 +22,7 @@ interface SwipeableNoteCardProps {
   onPress: () => void;
   onDelete: () => void;
   onPin: () => void;
+  onFavorite?: () => void;
   index: number;
 }
 
@@ -32,12 +34,15 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   onPress,
   onDelete,
   onPin,
+  onFavorite,
   index,
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const translateX = useSharedValue(0);
   const height = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const scale = useSharedValue(1);
   const hasTriggeredPinHaptic = useSharedValue(false);
   const hasTriggeredDeleteHaptic = useSharedValue(false);
 
@@ -68,6 +73,32 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     onPin();
     translateX.value = withSpring(0);
   };
+
+  const handleDoubleTap = () => {
+    if (onFavorite) {
+      // Scale animation on double-tap
+      scale.value = withSpring(0.95, {}, () => {
+        scale.value = withSpring(1);
+      });
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setShowHeartAnimation(true);
+      onFavorite();
+    }
+  };
+
+  // Double tap gesture for favorite
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      runOnJS(handleDoubleTap)();
+    });
+
+  // Single tap gesture for opening note
+  const singleTapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .onEnd(() => {
+      runOnJS(onPress)();
+    });
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-10, 10]) // Require 10px horizontal movement to activate
@@ -132,7 +163,10 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     });
 
   const cardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
+    transform: [
+      { translateX: translateX.value },
+      { scale: scale.value },
+    ],
     opacity: opacity.value,
   }));
 
@@ -197,9 +231,14 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
         </Animated.View>
       </View>
 
-      <GestureDetector gesture={panGesture}>
+      <GestureDetector gesture={Gesture.Exclusive(doubleTapGesture, Gesture.Simultaneous(singleTapGesture, panGesture))}>
         <Animated.View style={cardAnimatedStyle}>
-          <NoteCard note={note} onPress={onPress} />
+          <NoteCard note={note} onPress={() => {}} />
+          {/* Heart animation overlay */}
+          <HeartAnimation 
+            visible={showHeartAnimation} 
+            onComplete={() => setShowHeartAnimation(false)}
+          />
         </Animated.View>
       </GestureDetector>
 

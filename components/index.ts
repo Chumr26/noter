@@ -14,3 +14,4 @@ export { ConfettiAnimation } from './ConfettiAnimation';
 export { ParallaxScrollView } from './ParallaxScrollView';
 export { SwipeableNoteCard } from './SwipeableNoteCard';
 export { DeleteConfirmationModal } from './DeleteConfirmationModal';
+export { HeartAnimation } from './HeartAnimation';

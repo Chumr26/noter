@@ -185,6 +185,12 @@ export default function NotesListScreen() {
             onPress={() => handleNotePress(item)}
             onDelete={() => deleteNote(item.id)}
             onPin={() => togglePin(item.id)}
+            onFavorite={() => {
+              toggleFavorite(item.id);
+              if (settings.hapticsEnabled) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+            }}
             index={index}
           />
         </Animated.View>
@@ -202,7 +208,7 @@ export default function NotesListScreen() {
           />
         </Animated.View>
       ),
-    [useSwipeable, handleNotePress, handleNoteLongPress, deleteNote, togglePin]
+    [useSwipeable, handleNotePress, handleNoteLongPress, deleteNote, togglePin, toggleFavorite, settings.hapticsEnabled]
   );
 
   // Empty state

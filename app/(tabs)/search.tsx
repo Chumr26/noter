@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeOutUp, FadeIn } from 'react-native-reanimated';
@@ -22,8 +22,11 @@ export default function SearchScreen() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
   const notes = useNotesStore((state) => state.notes);
+  const loadNotes = useNotesStore((state) => state.loadNotes);
+  const settings = useNotesStore((state) => state.settings);
 
   // Debounce search query
   useEffect(() => {
@@ -94,6 +97,15 @@ export default function SearchScreen() {
     setDateFilter(filters[(currentIndex + 1) % filters.length]);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadNotes();
+    setRefreshing(false);
+    if (settings.hapticsEnabled) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [loadNotes, settings.hapticsEnabled]);
 
   const renderNote = useCallback(
     ({ item, index }: { item: Note; index: number }) => (
@@ -252,6 +264,14 @@ export default function SearchScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={renderEmptyState}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
           />
         </View>
       )}
