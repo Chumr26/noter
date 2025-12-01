@@ -71,6 +71,7 @@ const defaultSettings: AppSettings = {
   sortOption: 'date',
   defaultNoteColor: 'default',
   hapticsEnabled: true,
+  theme: 'auto',
 };
 
 export const useNotesStore = create<NotesState>((set, get) => ({

@@ -19,14 +19,17 @@ export default function RootLayout() {
     loadNotes();
   }, [loadNotes]);
 
+  // Safety check for colors
+  const backgroundColor = colors?.background ?? '#FFFFFF';
+
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack 
           screenOptions={{ 
             headerShown: false,
             contentStyle: {
-              backgroundColor: colors.background,
+              backgroundColor,
             },
           }}
         >
@@ -43,7 +46,7 @@ export default function RootLayout() {
             }} 
           />
         </Stack>
-        <StatusBar style="auto" />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

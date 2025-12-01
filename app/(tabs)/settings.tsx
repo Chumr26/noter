@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useNotesStore } from '@/store/notesStore';
 import { Typography, Spacing, Layout, BorderRadius, Shadows } from '@/constants/theme';
+import { ThemeMode } from '@/types';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'date' | 'title' | 'color';
@@ -22,6 +23,13 @@ export default function SettingsScreen() {
   const notes = useNotesStore((state) => state.notes);
 
   const [hapticsEnabled, setHapticsEnabled] = useState(settings.hapticsEnabled);
+
+  const handleThemeChange = (theme: ThemeMode) => {
+    updateSettings({ theme });
+    if (hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
 
   const handleViewModeChange = (mode: ViewMode) => {
     updateSettings({ viewMode: mode });
@@ -202,6 +210,18 @@ export default function SettingsScreen() {
         {/* Appearance */}
         <Animated.View entering={FadeInDown.delay(0).duration(300).springify()}>
           <SettingSection title="APPEARANCE">
+            <OptionSelector
+              icon="moon-outline"
+              label="Theme"
+              options={[
+                { value: 'light', label: 'Light', icon: 'sunny-outline' },
+                { value: 'dark', label: 'Dark', icon: 'moon-outline' },
+                { value: 'auto', label: 'Auto', icon: 'phone-portrait-outline' },
+              ]}
+              selected={settings.theme}
+              onSelect={(value) => handleThemeChange(value as ThemeMode)}
+            />
+            <View style={{ height: Spacing.md }} />
             <OptionSelector
               icon="color-palette-outline"
               label="View Mode"
