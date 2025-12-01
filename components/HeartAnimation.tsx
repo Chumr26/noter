@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -27,10 +28,11 @@ export const HeartAnimation: React.FC<HeartAnimationProps> = ({ visible, onCompl
       scale.value = withSequence(
         withSpring(1.2, { damping: 8, stiffness: 100 }),
         withDelay(300, withSpring(1.5)),
-        withTiming(0, { duration: 200 }, () => {
+        withTiming(0, { duration: 200 }, (finished) => {
+          'worklet';
           opacity.value = 0;
-          if (onComplete) {
-            onComplete();
+          if (finished && onComplete) {
+            runOnJS(onComplete)();
           }
         })
       );

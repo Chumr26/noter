@@ -12,7 +12,6 @@ import * as Haptics from 'expo-haptics';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NoteCard } from './NoteCard';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
-import { HeartAnimation } from './HeartAnimation';
 import { Note } from '@/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Spacing } from '@/constants/theme';
@@ -38,7 +37,6 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   index,
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const translateX = useSharedValue(0);
   const height = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -81,7 +79,6 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
         scale.value = withSpring(1);
       });
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-      setShowHeartAnimation(true);
       onFavorite();
     }
   };
@@ -252,11 +249,6 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
       <GestureDetector gesture={Gesture.Exclusive(doubleTapGesture, Gesture.Simultaneous(singleTapGesture, panGesture))}>
         <Animated.View style={cardAnimatedStyle}>
           <NoteCard note={note} onPress={() => {}} />
-          {/* Heart animation overlay */}
-          <HeartAnimation 
-            visible={showHeartAnimation} 
-            onComplete={() => setShowHeartAnimation(false)}
-          />
         </Animated.View>
       </GestureDetector>
 
