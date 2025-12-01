@@ -1,15 +1,21 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Typography, Spacing } from '@/constants/theme';
 
-export default function NotesListScreen() {
+export default function NoteDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useThemeColor();
+  
+  const isNewNote = id === 'new';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Notes</Text>
+      <Text style={[styles.title, { color: colors.text }]}>
+        {isNewNote ? 'New Note' : `Note ${id}`}
+      </Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Your notes will appear here
+        Note editor will appear here
       </Text>
     </View>
   );

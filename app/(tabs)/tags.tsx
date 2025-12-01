@@ -2,14 +2,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Typography, Spacing } from '@/constants/theme';
 
-export default function NotesListScreen() {
+export default function TagsScreen() {
   const colors = useThemeColor();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Notes</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Tags</Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Your notes will appear here
+        Organize with tags
       </Text>
     </View>
   );
