@@ -81,30 +81,26 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     .activeOffsetX([-10, 10]) // Require 10px horizontal movement to activate
     .failOffsetY([-15, 15]) // Fail if vertical movement exceeds 15px
     .onUpdate((event) => {
-      // Only allow left swipe (negative translation)
-      if (event.translationX < 0) {
-        translateX.value = event.translationX;
-        
-        const translation = Math.abs(event.translationX);
-        
-        // Haptic feedback when crossing pin threshold
-        if (translation >= SWIPE_THRESHOLD && !hasTriggeredPinHaptic.value) {
-          runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Light);
-          hasTriggeredPinHaptic.value = true;
-          hasTriggeredDeleteHaptic.value = false;
-        }
-        
-        // Haptic feedback when crossing delete threshold
-        if (translation >= ACTION_THRESHOLD && !hasTriggeredDeleteHaptic.value) {
-          runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Medium);
-          hasTriggeredDeleteHaptic.value = true;
-        }
-        
-        // Reset haptic flags when swiping back
-        if (translation < SWIPE_THRESHOLD) {
-          hasTriggeredPinHaptic.value = false;
-          hasTriggeredDeleteHaptic.value = false;
-        }
+      translateX.value = event.translationX;
+      
+      const translation = Math.abs(event.translationX);
+      
+      // Haptic feedback when crossing thresholds
+      if (translation >= SWIPE_THRESHOLD && !hasTriggeredPinHaptic.value) {
+        runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Light);
+        hasTriggeredPinHaptic.value = true;
+        hasTriggeredDeleteHaptic.value = false;
+      }
+      
+      if (translation >= ACTION_THRESHOLD && !hasTriggeredDeleteHaptic.value) {
+        runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Medium);
+        hasTriggeredDeleteHaptic.value = true;
+      }
+      
+      // Reset haptic flags when swiping back
+      if (translation < SWIPE_THRESHOLD) {
+        hasTriggeredPinHaptic.value = false;
+        hasTriggeredDeleteHaptic.value = false;
       }
     })
     .onEnd((event) => {
@@ -113,15 +109,30 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
       hasTriggeredDeleteHaptic.value = false;
       
       const translation = Math.abs(event.translationX);
+      const isRightSwipe = event.translationX > 0;
 
       if (translation >= ACTION_THRESHOLD) {
-        // Delete action
-        translateX.value = withSpring(-1000);
-        runOnJS(handleDelete)();
+        // Action threshold - delete (right swipe) or pin (left swipe)
+        if (isRightSwipe) {
+          // Delete action on right swipe
+          translateX.value = withSpring(1000);
+          runOnJS(handleDelete)();
+        } else {
+          // Pin action on strong left swipe
+          runOnJS(handlePin)();
+          translateX.value = withSpring(-SWIPE_THRESHOLD);
+        }
       } else if (translation >= SWIPE_THRESHOLD) {
-        // Pin action
-        runOnJS(handlePin)();
-        translateX.value = withSpring(-SWIPE_THRESHOLD);
+        // Swipe threshold - pin (right swipe) or return to center (left swipe)
+        if (isRightSwipe) {
+          // Pin action on right swipe
+          runOnJS(handlePin)();
+          translateX.value = withSpring(SWIPE_THRESHOLD);
+        } else {
+          // Pin action on left swipe
+          runOnJS(handlePin)();
+          translateX.value = withSpring(-SWIPE_THRESHOLD);
+        }
       } else {
         // Reset
         translateX.value = withSpring(0);
@@ -138,26 +149,32 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     marginBottom: height.value === 0 ? 0 : undefined,
   }));
 
-  const deleteActionStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(
-      Math.abs(translateX.value) >= ACTION_THRESHOLD ? 1 : 0.6,
-      { duration: 100 }
-    ),
-  }));
+  const deleteActionStyle = useAnimatedStyle(() => {
+    const isVisible = translateX.value > 0; // Show on right swipe
+    const translation = Math.abs(translateX.value);
+    return {
+      opacity: withTiming(
+        isVisible && translation >= SWIPE_THRESHOLD ? 1 : 0,
+        { duration: 100 }
+      ),
+    };
+  });
 
-  const pinActionStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(
-      Math.abs(translateX.value) >= SWIPE_THRESHOLD &&
-        Math.abs(translateX.value) < ACTION_THRESHOLD
-        ? 1
-        : 0.6,
-      { duration: 100 }
-    ),
-  }));
+  const pinActionStyle = useAnimatedStyle(() => {
+    const isVisible = translateX.value < 0; // Show on left swipe
+    const translation = Math.abs(translateX.value);
+    return {
+      opacity: withTiming(
+        isVisible && translation >= SWIPE_THRESHOLD ? 1 : 0,
+        { duration: 100 }
+      ),
+    };
+  });
 
   return (
     <Animated.View style={[styles.container, containerAnimatedStyle]}>
-      <View style={styles.actionsContainer}>
+      {/* Left action - Pin/Unpin */}
+      <View style={[styles.actionsContainer, styles.leftActions]}>
         <Animated.View
           style={[
             styles.action,
@@ -172,6 +189,10 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
             color="#FFF"
           />
         </Animated.View>
+      </View>
+
+      {/* Right action - Delete */}
+      <View style={[styles.actionsContainer, styles.rightActions]}>
         <Animated.View
           style={[
             styles.action,
@@ -200,23 +221,31 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     position: 'absolute',
-    right: 0,
     top: 0,
-    bottom: Spacing.md, // Account for container's marginBottom
-    flexDirection: 'row',
-    alignItems: 'stretch',
+    bottom: Spacing.md,
+    justifyContent: 'center',
     borderRadius: 18,
     overflow: 'hidden',
   },
+  leftActions: {
+    right: 0,
+    paddingLeft: Spacing.md,
+  },
+  rightActions: {
+    left: 0,
+    paddingRight: Spacing.md,
+  },
   action: {
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
+    borderRadius: 18,
   },
   pinAction: {
-    width: SWIPE_THRESHOLD,
+    minWidth: SWIPE_THRESHOLD,
   },
   deleteAction: {
-    width: ACTION_THRESHOLD,
+    minWidth: SWIPE_THRESHOLD,
   },
 });
