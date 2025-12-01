@@ -87,7 +87,7 @@ export default function NotesListScreen() {
     return [...pinned.sort(sortFn), ...unpinned.sort(sortFn)];
   }, [notes, activeFilter, searchQuery, settings.sortOption]);
 
-  // Calculate counts for filter chips
+  // Calculate counts for filter chips - based on filtered results
   const filterCounts = useMemo(
     () => ({
       all: notes.length,

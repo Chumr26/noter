@@ -36,14 +36,17 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   const translateX = useSharedValue(0);
   const height = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const hasTriggeredPinHaptic = useSharedValue(false);
+  const hasTriggeredDeleteHaptic = useSharedValue(false);
 
   const colors = useThemeColor();
 
-  const triggerHaptic = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const triggerHaptic = (style: Haptics.ImpactFeedbackStyle) => {
+    Haptics.impactAsync(style);
   };
 
   const handleDelete = () => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
       'Delete Note',
       'Are you sure you want to delete this note?',
@@ -69,7 +72,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   };
 
   const handlePin = () => {
-    triggerHaptic();
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     onPin();
     translateX.value = withSpring(0);
   };
@@ -81,9 +84,34 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
       // Only allow left swipe (negative translation)
       if (event.translationX < 0) {
         translateX.value = event.translationX;
+        
+        const translation = Math.abs(event.translationX);
+        
+        // Haptic feedback when crossing pin threshold
+        if (translation >= SWIPE_THRESHOLD && !hasTriggeredPinHaptic.value) {
+          runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Light);
+          hasTriggeredPinHaptic.value = true;
+          hasTriggeredDeleteHaptic.value = false;
+        }
+        
+        // Haptic feedback when crossing delete threshold
+        if (translation >= ACTION_THRESHOLD && !hasTriggeredDeleteHaptic.value) {
+          runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Medium);
+          hasTriggeredDeleteHaptic.value = true;
+        }
+        
+        // Reset haptic flags when swiping back
+        if (translation < SWIPE_THRESHOLD) {
+          hasTriggeredPinHaptic.value = false;
+          hasTriggeredDeleteHaptic.value = false;
+        }
       }
     })
     .onEnd((event) => {
+      // Reset haptic flags
+      hasTriggeredPinHaptic.value = false;
+      hasTriggeredDeleteHaptic.value = false;
+      
       const translation = Math.abs(event.translationX);
 
       if (translation >= ACTION_THRESHOLD) {
@@ -107,7 +135,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     height: height.value === 0 ? 0 : undefined,
-    marginBottom: height.value === 0 ? 0 : Spacing.sm,
+    marginBottom: height.value === 0 ? 0 : undefined,
   }));
 
   const deleteActionStyle = useAnimatedStyle(() => ({
@@ -168,18 +196,19 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    overflow: 'hidden',
+    marginBottom: Spacing.md,
   },
   actionsContainer: {
     position: 'absolute',
     right: 0,
     top: 0,
-    bottom: 0,
+    bottom: Spacing.md, // Account for container's marginBottom
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
+    borderRadius: 18,
+    overflow: 'hidden',
   },
   action: {
-    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
