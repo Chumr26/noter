@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
   FadeOutUp,
+  FadeIn,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -18,8 +19,10 @@ import {
   FloatingActionButton,
   FilterChips,
   EmptyState,
-  LoadingSpinner,
   IconButton,
+  SkeletonNoteCard,
+  ConfettiAnimation,
+  SwipeableNoteCard,
 } from '@/components';
 import { Typography, Spacing, Layout } from '@/constants/theme';
 
@@ -27,6 +30,8 @@ export default function NotesListScreen() {
   const colors = useThemeColor();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [useSwipeable, setUseSwipeable] = useState(true);
 
   // Store state
   const notes = useNotesStore((state) => state.notes);
@@ -40,11 +45,7 @@ export default function NotesListScreen() {
   const isLoading = useNotesStore((state) => state.isLoading);
 
   // Get filtered notes
-  const filteredNotes = useMemo(() => getFilteredNotes(), [
-    notes,
-    activeFilter,
-    getFilteredNotes,
-  ]);
+  const filteredNotes = useMemo(() => getFilteredNotes(), [getFilteredNotes]);
 
   // Calculate counts for filter chips
   const filterCounts = useMemo(
@@ -123,35 +124,55 @@ export default function NotesListScreen() {
 
   // Create new note
   const handleCreateNote = useCallback(() => {
+    setShowConfetti(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/note/new');
   }, []);
 
   // Render note item with animation
   const renderNote = useCallback(
-    ({ item, index }: { item: Note; index: number }) => (
-      <Animated.View
-        entering={FadeInDown.delay(index * 50)
-          .duration(300)
-          .springify()}
-        exiting={FadeOutUp.duration(200)}
-      >
-        <NoteCard
-          note={item}
-          onPress={() => handleNotePress(item)}
-          onLongPress={() => handleNoteLongPress(item)}
-        />
-      </Animated.View>
-    ),
-    [handleNotePress, handleNoteLongPress]
+    ({ item, index }: { item: Note; index: number }) =>
+      useSwipeable ? (
+        <Animated.View
+          entering={FadeInDown.delay(index * 50)
+            .duration(300)
+            .springify()}
+          exiting={FadeOutUp.duration(200)}
+        >
+          <SwipeableNoteCard
+            note={item}
+            onPress={() => handleNotePress(item)}
+            onDelete={() => deleteNote(item.id)}
+            onPin={() => togglePin(item.id)}
+            index={index}
+          />
+        </Animated.View>
+      ) : (
+        <Animated.View
+          entering={FadeInDown.delay(index * 50)
+            .duration(300)
+            .springify()}
+          exiting={FadeOutUp.duration(200)}
+        >
+          <NoteCard
+            note={item}
+            onPress={() => handleNotePress(item)}
+            onLongPress={() => handleNoteLongPress(item)}
+          />
+        </Animated.View>
+      ),
+    [useSwipeable, handleNotePress, handleNoteLongPress, deleteNote, togglePin]
   );
 
   // Empty state
   const renderEmptyState = () => {
     if (isLoading) {
       return (
-        <View style={styles.centerContainer}>
-          <LoadingSpinner size={50} />
-        </View>
+        <Animated.View entering={FadeIn.duration(300)}>
+          <SkeletonNoteCard />
+          <SkeletonNoteCard />
+          <SkeletonNoteCard />
+        </Animated.View>
       );
     }
 
@@ -234,7 +255,6 @@ export default function NotesListScreen() {
       <FlashList
         data={filteredNotes}
         renderItem={renderNote}
-        estimatedItemSize={150}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -251,6 +271,12 @@ export default function NotesListScreen() {
 
       {/* Floating Action Button */}
       <FloatingActionButton onPress={handleCreateNote} />
+      
+      {/* Confetti animation on note creation */}
+      <ConfettiAnimation
+        show={showConfetti}
+        onComplete={() => setShowConfetti(false)}
+      />
     </View>
   );
 }
