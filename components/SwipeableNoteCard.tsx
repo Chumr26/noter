@@ -26,8 +26,8 @@ interface SwipeableNoteCardProps {
   index: number;
 }
 
-const SWIPE_THRESHOLD = 80;
-const ACTION_THRESHOLD = 120;
+const SWIPE_THRESHOLD = 50; // Reduced from 80 for easier swiping
+const ACTION_THRESHOLD = 100; // Reduced from 120 for easier actions
 
 export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   note,
@@ -101,12 +101,15 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     });
 
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-10, 10]) // Require 10px horizontal movement to activate
-    .failOffsetY([-15, 15]) // Fail if vertical movement exceeds 15px
+    .activeOffsetX([-5, 5]) // Reduced from 10 - easier to activate horizontal swipe
+    .failOffsetY([-25, 25]) // Increased from 15 - more forgiving for diagonal swipes
+    .enableTrackpadTwoFingerGesture(true) // Enable trackpad gestures
     .onUpdate((event) => {
-      translateX.value = event.translationX;
+      // Add resistance for better feel
+      const resistance = 0.7;
+      translateX.value = event.translationX * resistance;
       
-      const translation = Math.abs(event.translationX);
+      const translation = Math.abs(translateX.value);
       
       // Haptic feedback when crossing thresholds
       if (translation >= SWIPE_THRESHOLD && !hasTriggeredPinHaptic.value) {
@@ -131,8 +134,9 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
       hasTriggeredPinHaptic.value = false;
       hasTriggeredDeleteHaptic.value = false;
       
-      const translation = Math.abs(event.translationX);
-      const isRightSwipe = event.translationX > 0;
+      // Use the actual translation (with resistance) for threshold checks
+      const translation = Math.abs(translateX.value);
+      const isRightSwipe = translateX.value > 0;
 
       if (translation >= ACTION_THRESHOLD) {
         // Action threshold - delete (right swipe) or pin (left swipe)
@@ -146,7 +150,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
           translateX.value = withSpring(-SWIPE_THRESHOLD);
         }
       } else if (translation >= SWIPE_THRESHOLD) {
-        // Swipe threshold - pin (right swipe) or return to center (left swipe)
+        // Swipe threshold - pin action for both directions
         if (isRightSwipe) {
           // Pin action on right swipe
           runOnJS(handlePin)();
@@ -157,7 +161,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
           translateX.value = withSpring(-SWIPE_THRESHOLD);
         }
       } else {
-        // Reset
+        // Reset if didn't reach threshold
         translateX.value = withSpring(0);
       }
     });
@@ -180,9 +184,16 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     const translation = Math.abs(translateX.value);
     return {
       opacity: withTiming(
-        isVisible && translation >= SWIPE_THRESHOLD ? 1 : 0,
-        { duration: 100 }
+        isVisible && translation >= SWIPE_THRESHOLD * 0.6 ? 1 : 0, // Show earlier (60% of threshold)
+        { duration: 150 }
       ),
+      transform: [
+        {
+          scale: withSpring(
+            isVisible && translation >= SWIPE_THRESHOLD * 0.6 ? 1 : 0.8
+          ),
+        },
+      ],
     };
   });
 
@@ -191,9 +202,16 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     const translation = Math.abs(translateX.value);
     return {
       opacity: withTiming(
-        isVisible && translation >= SWIPE_THRESHOLD ? 1 : 0,
-        { duration: 100 }
+        isVisible && translation >= SWIPE_THRESHOLD * 0.6 ? 1 : 0, // Show earlier (60% of threshold)
+        { duration: 150 }
       ),
+      transform: [
+        {
+          scale: withSpring(
+            isVisible && translation >= SWIPE_THRESHOLD * 0.6 ? 1 : 0.8
+          ),
+        },
+      ],
     };
   });
 

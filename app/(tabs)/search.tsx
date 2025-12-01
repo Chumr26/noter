@@ -363,6 +363,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: Layout.screenPadding,
+    paddingTop: Spacing.md,
     paddingBottom: 100,
   },
 });
