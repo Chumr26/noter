@@ -24,6 +24,7 @@ import {
   ConfettiAnimation,
   SwipeableNoteCard,
 } from '@/components';
+import EmptyNotesIllustration from '@/components/illustrations/EmptyNotesIllustration';
 import { Typography, Spacing, Layout } from '@/constants/theme';
 
 export default function NotesListScreen() {
@@ -236,17 +237,19 @@ export default function NotesListScreen() {
     return (
       <EmptyState
         icon={
-          <Ionicons
-            name={
-              activeFilter === 'pinned'
-                ? 'pin-outline'
-                : activeFilter === 'favorites'
-                ? 'heart-outline'
-                : 'document-text-outline'
-            }
-            size={80}
-            color={colors.textTertiary}
-          />
+          activeFilter === 'all' ? (
+            <EmptyNotesIllustration size={180} />
+          ) : (
+            <Ionicons
+              name={
+                activeFilter === 'pinned'
+                  ? 'pin-outline'
+                  : 'heart-outline'
+              }
+              size={80}
+              color={colors.textTertiary}
+            />
+          )
         }
         title={message.title}
         description={message.description}

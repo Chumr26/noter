@@ -84,13 +84,17 @@ export default function NoteEditorScreen() {
       return;
     }
 
+    // Extract tags from content (words starting with #)
+    const extractedTags = (content.match(/#[\w-]+/g) || [])
+      .map(tag => tag.toLowerCase());
+
     if (isNewNote && !createdNoteId) {
       // Create new note and store its ID
       const newNoteId = addNote({
         title: title.trim(),
         content: content.trim(),
         color: noteColor,
-        tags: [],
+        tags: extractedTags,
         isPinned: false,
         isFavorite: false,
       });
@@ -102,6 +106,7 @@ export default function NoteEditorScreen() {
         title: title.trim(),
         content: content.trim(),
         color: noteColor,
+        tags: extractedTags,
       });
     } else if (createdNoteId) {
       // Update the newly created note
@@ -109,6 +114,7 @@ export default function NoteEditorScreen() {
         title: title.trim(),
         content: content.trim(),
         color: noteColor,
+        tags: extractedTags,
       });
     }
   }, [

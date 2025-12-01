@@ -11,6 +11,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useNotesStore } from '@/store/notesStore';
 import { Note } from '@/types';
 import { NoteCard, EmptyState, IconButton } from '@/components';
+import EmptySearchIllustration from '@/components/illustrations/EmptySearchIllustration';
 import { Typography, Spacing, Layout, BorderRadius } from '@/constants/theme';
 
 export default function SearchScreen() {
@@ -112,7 +113,7 @@ export default function SearchScreen() {
     if (debouncedQuery.trim() === '' && dateFilter === 'all') {
       return (
         <EmptyState
-          icon={<Ionicons name="search-outline" size={64} color={colors.textTertiary} />}
+          icon={<EmptySearchIllustration size={180} />}
           title="Search your notes"
           description="Enter keywords, tags, or phrases to find notes"
         />
