@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withSequence,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -27,7 +26,6 @@ export function FloatingActionButton({
 }: FloatingActionButtonProps) {
   const colors = useThemeColor();
   const scale = useSharedValue(1);
-  const rotation = useSharedValue(0);
 
   const handlePressIn = () => {
     scale.value = withSpring(0.9, {
@@ -42,19 +40,10 @@ export function FloatingActionButton({
       damping: 15,
       stiffness: 150,
     });
-    
-    // Rotate animation
-    rotation.value = withSequence(
-      withSpring(45, { damping: 20, stiffness: 200 }),
-      withSpring(0, { damping: 20, stiffness: 200 })
-    );
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { rotate: `${rotation.value}deg` },
-    ],
+    transform: [{ scale: scale.value }],
   }));
 
   return (

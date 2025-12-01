@@ -21,9 +21,9 @@ import {
   EmptyState,
   IconButton,
   SkeletonNoteCard,
-  ConfettiAnimation,
   SwipeableNoteCard,
   SelectionToolbar,
+  ConfettiAnimation,
 } from '@/components';
 import EmptyNotesIllustration from '@/components/illustrations/EmptyNotesIllustration';
 import { Typography, Spacing, Layout } from '@/constants/theme';
@@ -32,7 +32,6 @@ export default function NotesListScreen() {
   const colors = useThemeColor();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   const useSwipeable = true; // Enable swipeable cards
 
   // Store state
@@ -60,6 +59,10 @@ export default function NotesListScreen() {
   const favoriteSelectedNotes = useNotesStore((state) => state.favoriteSelectedNotes);
   const unfavoriteSelectedNotes = useNotesStore((state) => state.unfavoriteSelectedNotes);
   const changeSelectedNotesColor = useNotesStore((state) => state.changeSelectedNotesColor);
+  
+  // Celebration state
+  const showCelebration = useNotesStore((state) => state.showCelebration);
+  const clearCelebration = useNotesStore((state) => state.clearCelebration);
 
   // Get filtered notes - computed directly from store values
   const filteredNotes = useMemo(() => {
@@ -142,7 +145,6 @@ export default function NotesListScreen() {
 
   // Create new note
   const handleCreateNote = useCallback(() => {
-    setShowConfetti(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/note/new');
   }, []);
@@ -354,12 +356,6 @@ export default function NotesListScreen() {
 
       {/* Floating Action Button */}
       {!selectionMode && <FloatingActionButton onPress={handleCreateNote} />}
-      
-      {/* Confetti animation on note creation */}
-      <ConfettiAnimation
-        show={showConfetti}
-        onComplete={() => setShowConfetti(false)}
-      />
 
       {/* Selection Toolbar */}
       {selectionMode && (
@@ -375,6 +371,12 @@ export default function NotesListScreen() {
           onClearSelection={clearSelection}
         />
       )}
+      
+      {/* Confetti animation */}
+      <ConfettiAnimation
+        show={showCelebration}
+        onComplete={clearCelebration}
+      />
     </View>
   );
 }

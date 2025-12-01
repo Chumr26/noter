@@ -7,10 +7,12 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNotesStore } from '@/store/notesStore';
+import { getThemeColors } from '@/constants/theme';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const loadNotes = useNotesStore((state) => state.loadNotes);
+  const colors = getThemeColors(colorScheme);
 
   // Load notes on app start
   useEffect(() => {
@@ -18,15 +20,26 @@ export default function RootLayout() {
   }, [loadNotes]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack 
+          screenOptions={{ 
+            headerShown: false,
+            contentStyle: {
+              backgroundColor: colors.background,
+            },
+          }}
+        >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen 
             name="note/[id]" 
             options={{ 
-              presentation: 'modal',
+              presentation: 'transparentModal',
               animation: 'slide_from_bottom',
+              gestureEnabled: true,
+              fullScreenGestureEnabled: true,
+              animationTypeForReplace: 'push',
+              animationDuration: 250,
             }} 
           />
         </Stack>

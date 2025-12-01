@@ -15,6 +15,11 @@ interface NotesState {
   selectionMode: boolean;
   selectedNoteIds: string[];
   
+  // Celebration State
+  showCelebration: boolean;
+  triggerCelebration: () => void;
+  clearCelebration: () => void;
+  
   // Actions - Selection
   toggleSelectionMode: () => void;
   toggleNoteSelection: (id: string) => void;
@@ -80,6 +85,17 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   // Selection State
   selectionMode: false,
   selectedNoteIds: [],
+  
+  // Celebration State
+  showCelebration: false,
+  
+  triggerCelebration: () => {
+    set({ showCelebration: true });
+  },
+  
+  clearCelebration: () => {
+    set({ showCelebration: false });
+  },
   
   // Selection Actions
   toggleSelectionMode: () => {

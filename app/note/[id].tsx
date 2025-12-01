@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -35,6 +35,7 @@ export default function NoteEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useThemeColor();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const isNewNote = id === 'new';
 
@@ -46,6 +47,7 @@ export default function NoteEditorScreen() {
   const togglePin = useNotesStore((state) => state.togglePin);
   const toggleFavorite = useNotesStore((state) => state.toggleFavorite);
   const settings = useNotesStore((state) => state.settings);
+  const triggerCelebration = useNotesStore((state) => state.triggerCelebration);
 
   // Find existing note
   const existingNote = notes.find((n) => n.id === id);
@@ -147,13 +149,42 @@ export default function NoteEditorScreen() {
     };
   }, [title, content, noteColor, hasUnsavedChanges, saveNote]);
 
+  // Intercept back navigation (including swipe gesture)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Check if a new note was created
+      const noteWasCreated = isNewNote && createdNoteId;
+      
+      // Save if there are unsaved changes
+      if (hasUnsavedChanges) {
+        saveNote();
+      }
+      
+      // Trigger celebration if note was created
+      if (noteWasCreated) {
+        triggerCelebration();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isNewNote, createdNoteId, hasUnsavedChanges, saveNote, triggerCelebration]);
+
   // Handle back navigation
   const handleBack = useCallback(() => {
+    // Check if a new note was created
+    const noteWasCreated = isNewNote && createdNoteId;
+    
     if (hasUnsavedChanges) {
       saveNote();
     }
+    
+    // Trigger celebration if note was created
+    if (noteWasCreated) {
+      triggerCelebration();
+    }
+    
     router.back();
-  }, [hasUnsavedChanges, saveNote]);
+  }, [hasUnsavedChanges, saveNote, isNewNote, createdNoteId, triggerCelebration]);
 
   // Handle delete
   const handleDelete = useCallback(() => {
@@ -204,8 +235,9 @@ export default function NoteEditorScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, { backgroundColor }]}
+      keyboardVerticalOffset={0}
     >
       {/* Header */}
       <Animated.View
