@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -11,6 +11,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NoteCard } from './NoteCard';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { Note } from '@/types';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Spacing } from '@/constants/theme';
@@ -33,6 +34,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   onPin,
   index,
 }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const translateX = useSharedValue(0);
   const height = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -45,30 +47,20 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
     Haptics.impactAsync(style);
   };
 
-  const handleDelete = () => {
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-    Alert.alert(
-      'Delete Note',
-      'Are you sure you want to delete this note?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            translateX.value = withSpring(0);
-          },
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            height.value = withTiming(0, { duration: 300 });
-            opacity.value = withTiming(0, { duration: 300 });
-            setTimeout(onDelete, 300);
-          },
-        },
-      ]
-    );
+  const handleDeleteRequest = () => {
+    setShowDeleteModal(true);
+    translateX.value = withSpring(0);
+  };
+
+  const handleDeleteConfirm = () => {
+    setShowDeleteModal(false);
+    height.value = withTiming(0, { duration: 300 });
+    opacity.value = withTiming(0, { duration: 300 });
+    setTimeout(onDelete, 300);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
   };
 
   const handlePin = () => {
@@ -116,7 +108,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
         if (isRightSwipe) {
           // Delete action on right swipe
           translateX.value = withSpring(1000);
-          runOnJS(handleDelete)();
+          runOnJS(handleDeleteRequest)();
         } else {
           // Pin action on strong left swipe
           runOnJS(handlePin)();
@@ -210,6 +202,14 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
           <NoteCard note={note} onPress={onPress} />
         </Animated.View>
       </GestureDetector>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        visible={showDeleteModal}
+        noteTitle={note.title}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </Animated.View>
   );
 };
