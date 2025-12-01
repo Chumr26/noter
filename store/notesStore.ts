@@ -12,7 +12,7 @@ interface NotesState {
   isLoading: boolean;
   
   // Actions - Notes CRUD
-  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
   deleteNote: (id: string) => void;
   
@@ -80,6 +80,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       
       return { notes, tags };
     });
+    
+    return newNote.id;
   },
   
   // Update existing note

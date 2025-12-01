@@ -44,8 +44,7 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   };
 
   const handleDelete = () => {
-    'worklet';
-    runOnJS(Alert.alert)(
+    Alert.alert(
       'Delete Note',
       'Are you sure you want to delete this note?',
       [
@@ -70,13 +69,14 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
   };
 
   const handlePin = () => {
-    'worklet';
-    runOnJS(triggerHaptic)();
-    runOnJS(onPin)();
+    triggerHaptic();
+    onPin();
     translateX.value = withSpring(0);
   };
 
   const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10]) // Require 10px horizontal movement to activate
+    .failOffsetY([-15, 15]) // Fail if vertical movement exceeds 15px
     .onUpdate((event) => {
       // Only allow left swipe (negative translation)
       if (event.translationX < 0) {
@@ -92,8 +92,8 @@ export const SwipeableNoteCard: React.FC<SwipeableNoteCardProps> = ({
         runOnJS(handleDelete)();
       } else if (translation >= SWIPE_THRESHOLD) {
         // Pin action
-        translateX.value = withSpring(-SWIPE_THRESHOLD);
         runOnJS(handlePin)();
+        translateX.value = withSpring(-SWIPE_THRESHOLD);
       } else {
         // Reset
         translateX.value = withSpring(0);

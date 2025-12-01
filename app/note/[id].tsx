@@ -58,10 +58,11 @@ export default function NoteEditorScreen() {
   );
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [createdNoteId, setCreatedNoteId] = useState<string | null>(null);
 
   // Refs
   const contentInputRef = useRef<TextInput>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout>();
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check for unsaved changes
   useEffect(() => {
@@ -83,8 +84,9 @@ export default function NoteEditorScreen() {
       return;
     }
 
-    if (isNewNote) {
-      addNote({
+    if (isNewNote && !createdNoteId) {
+      // Create new note and store its ID
+      const newNoteId = addNote({
         title: title.trim(),
         content: content.trim(),
         color: noteColor,
@@ -92,9 +94,18 @@ export default function NoteEditorScreen() {
         isPinned: false,
         isFavorite: false,
       });
+      setCreatedNoteId(newNoteId);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else if (existingNote) {
+      // Update existing note
       updateNote(existingNote.id, {
+        title: title.trim(),
+        content: content.trim(),
+        color: noteColor,
+      });
+    } else if (createdNoteId) {
+      // Update the newly created note
+      updateNote(createdNoteId, {
         title: title.trim(),
         content: content.trim(),
         color: noteColor,
@@ -105,6 +116,7 @@ export default function NoteEditorScreen() {
     content,
     noteColor,
     isNewNote,
+    createdNoteId,
     addNote,
     updateNote,
     existingNote,
@@ -139,7 +151,11 @@ export default function NoteEditorScreen() {
 
   // Handle delete
   const handleDelete = useCallback(() => {
-    if (!existingNote) return;
+    const noteId = createdNoteId || existingNote?.id;
+    if (!noteId) {
+      router.back();
+      return;
+    }
 
     Alert.alert('Delete Note', 'Are you sure you want to delete this note?', [
       { text: 'Cancel', style: 'cancel' },
@@ -147,26 +163,28 @@ export default function NoteEditorScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          deleteNote(existingNote.id);
+          deleteNote(noteId);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.back();
         },
       },
     ]);
-  }, [existingNote, deleteNote]);
+  }, [createdNoteId, existingNote, deleteNote]);
 
   // Handle pin/favorite
   const handleTogglePin = useCallback(() => {
-    if (!existingNote) return;
-    togglePin(existingNote.id);
+    const noteId = createdNoteId || existingNote?.id;
+    if (!noteId) return;
+    togglePin(noteId);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [existingNote, togglePin]);
+  }, [createdNoteId, existingNote, togglePin]);
 
   const handleToggleFavorite = useCallback(() => {
-    if (!existingNote) return;
-    toggleFavorite(existingNote.id);
+    const noteId = createdNoteId || existingNote?.id;
+    if (!noteId) return;
+    toggleFavorite(noteId);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [existingNote, toggleFavorite]);
+  }, [createdNoteId, existingNote, toggleFavorite]);
 
   // Character and word count
   const charCount = content.length;
@@ -174,6 +192,9 @@ export default function NoteEditorScreen() {
 
   // Background color
   const backgroundColor = colors.noteColors[noteColor];
+  
+  // Get current note (either existing or newly created)
+  const currentNote = existingNote || (createdNoteId ? notes.find(n => n.id === createdNoteId) : null);
 
   return (
     <KeyboardAvoidingView
@@ -201,19 +222,19 @@ export default function NoteEditorScreen() {
         </View>
 
         <View style={styles.headerRight}>
-          {!isNewNote && existingNote && (
+          {currentNote && (
             <>
               <IconButton
-                icon={existingNote.isPinned ? 'pin' : 'pin-outline'}
+                icon={currentNote.isPinned ? 'pin' : 'pin-outline'}
                 onPress={handleTogglePin}
-                color={existingNote.isPinned ? colors.warning : colors.text}
+                color={currentNote.isPinned ? colors.warning : colors.text}
                 backgroundColor={colors.background + '80'}
                 style={{ marginRight: Spacing.sm }}
               />
               <IconButton
-                icon={existingNote.isFavorite ? 'heart' : 'heart-outline'}
+                icon={currentNote.isFavorite ? 'heart' : 'heart-outline'}
                 onPress={handleToggleFavorite}
-                color={existingNote.isFavorite ? colors.error : colors.text}
+                color={currentNote.isFavorite ? colors.error : colors.text}
                 backgroundColor={colors.background + '80'}
                 style={{ marginRight: Spacing.sm }}
               />
@@ -226,7 +247,7 @@ export default function NoteEditorScreen() {
             backgroundColor={colors.background + '80'}
             style={{ marginRight: Spacing.sm }}
           />
-          {!isNewNote && (
+          {currentNote && (
             <IconButton
               icon="trash-outline"
               onPress={handleDelete}
@@ -283,9 +304,9 @@ export default function NoteEditorScreen() {
           <Text style={[styles.metadataText, { color: colors.textTertiary }]}>
             {charCount} characters · {wordCount} words
           </Text>
-          {existingNote && (
+          {currentNote && (
             <Text style={[styles.metadataText, { color: colors.textTertiary }]}>
-              {dayjs(existingNote.updatedAt).format('MMM D, YYYY [at] h:mm A')}
+              {dayjs(currentNote.updatedAt).format('MMM D, YYYY [at] h:mm A')}
             </Text>
           )}
         </View>

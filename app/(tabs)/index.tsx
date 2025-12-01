@@ -31,7 +31,7 @@ export default function NotesListScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [useSwipeable, setUseSwipeable] = useState(true);
+  const useSwipeable = true; // Enable swipeable cards
 
   // Store state
   const notes = useNotesStore((state) => state.notes);
@@ -41,11 +41,51 @@ export default function NotesListScreen() {
   const togglePin = useNotesStore((state) => state.togglePin);
   const toggleFavorite = useNotesStore((state) => state.toggleFavorite);
   const loadNotes = useNotesStore((state) => state.loadNotes);
-  const getFilteredNotes = useNotesStore((state) => state.getFilteredNotes);
   const isLoading = useNotesStore((state) => state.isLoading);
+  const searchQuery = useNotesStore((state) => state.searchQuery);
+  const settings = useNotesStore((state) => state.settings);
 
-  // Get filtered notes
-  const filteredNotes = useMemo(() => getFilteredNotes(), [getFilteredNotes]);
+  // Get filtered notes - computed directly from store values
+  const filteredNotes = useMemo(() => {
+    let filtered = notes;
+    
+    // Apply filter
+    if (activeFilter === 'pinned') {
+      filtered = filtered.filter(note => note.isPinned);
+    } else if (activeFilter === 'favorites') {
+      filtered = filtered.filter(note => note.isFavorite);
+    }
+    
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        note =>
+          note.title.toLowerCase().includes(query) ||
+          note.content.toLowerCase().includes(query) ||
+          note.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    
+    // Sort - pinned notes first, then by selected sort option
+    const pinned = filtered.filter(note => note.isPinned);
+    const unpinned = filtered.filter(note => !note.isPinned);
+    
+    const sortFn = (a: Note, b: Note) => {
+      switch (settings.sortOption) {
+        case 'date':
+          return b.updatedAt - a.updatedAt;
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'color':
+          return a.color.localeCompare(b.color);
+        default:
+          return 0;
+      }
+    };
+    
+    return [...pinned.sort(sortFn), ...unpinned.sort(sortFn)];
+  }, [notes, activeFilter, searchQuery, settings.sortOption]);
 
   // Calculate counts for filter chips
   const filterCounts = useMemo(
@@ -256,7 +296,6 @@ export default function NotesListScreen() {
         data={filteredNotes}
         renderItem={renderNote}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
@@ -267,6 +306,7 @@ export default function NotesListScreen() {
             colors={[colors.primary]}
           />
         }
+        contentContainerStyle={styles.listContent}
       />
 
       {/* Floating Action Button */}
