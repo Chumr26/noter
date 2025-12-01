@@ -11,6 +11,22 @@ interface NotesState {
   settings: AppSettings;
   isLoading: boolean;
   
+  // Selection State
+  selectionMode: boolean;
+  selectedNoteIds: string[];
+  
+  // Actions - Selection
+  toggleSelectionMode: () => void;
+  toggleNoteSelection: (id: string) => void;
+  selectAllNotes: () => void;
+  clearSelection: () => void;
+  deleteSelectedNotes: () => void;
+  pinSelectedNotes: () => void;
+  unpinSelectedNotes: () => void;
+  favoriteSelectedNotes: () => void;
+  unfavoriteSelectedNotes: () => void;
+  changeSelectedNotesColor: (color: string) => void;
+  
   // Actions - Notes CRUD
   addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
@@ -60,6 +76,114 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   activeFilter: 'all',
   settings: defaultSettings,
   isLoading: false,
+  
+  // Selection State
+  selectionMode: false,
+  selectedNoteIds: [],
+  
+  // Selection Actions
+  toggleSelectionMode: () => {
+    set((state) => ({
+      selectionMode: !state.selectionMode,
+      selectedNoteIds: state.selectionMode ? [] : state.selectedNoteIds,
+    }));
+  },
+  
+  toggleNoteSelection: (id) => {
+    set((state) => {
+      const isSelected = state.selectedNoteIds.includes(id);
+      return {
+        selectedNoteIds: isSelected
+          ? state.selectedNoteIds.filter((noteId) => noteId !== id)
+          : [...state.selectedNoteIds, id],
+      };
+    });
+  },
+  
+  selectAllNotes: () => {
+    set((state) => ({
+      selectedNoteIds: state.notes.map((note) => note.id),
+    }));
+  },
+  
+  clearSelection: () => {
+    set({ selectedNoteIds: [], selectionMode: false });
+  },
+  
+  deleteSelectedNotes: () => {
+    set((state) => {
+      const notes = state.notes.filter(
+        (note) => !state.selectedNoteIds.includes(note.id)
+      );
+      saveToStorage(notes);
+      
+      // Clean up unused tags
+      const allTags = new Set(notes.flatMap((note) => note.tags));
+      const tags = Array.from(allTags);
+      
+      return { notes, tags, selectedNoteIds: [], selectionMode: false };
+    });
+  },
+  
+  pinSelectedNotes: () => {
+    set((state) => {
+      const notes = state.notes.map((note) =>
+        state.selectedNoteIds.includes(note.id)
+          ? { ...note, isPinned: true, updatedAt: Date.now() }
+          : note
+      );
+      saveToStorage(notes);
+      return { notes, selectedNoteIds: [], selectionMode: false };
+    });
+  },
+  
+  unpinSelectedNotes: () => {
+    set((state) => {
+      const notes = state.notes.map((note) =>
+        state.selectedNoteIds.includes(note.id)
+          ? { ...note, isPinned: false, updatedAt: Date.now() }
+          : note
+      );
+      saveToStorage(notes);
+      return { notes, selectedNoteIds: [], selectionMode: false };
+    });
+  },
+  
+  favoriteSelectedNotes: () => {
+    set((state) => {
+      const notes = state.notes.map((note) =>
+        state.selectedNoteIds.includes(note.id)
+          ? { ...note, isFavorite: true, updatedAt: Date.now() }
+          : note
+      );
+      saveToStorage(notes);
+      return { notes, selectedNoteIds: [], selectionMode: false };
+    });
+  },
+  
+  unfavoriteSelectedNotes: () => {
+    set((state) => {
+      const notes = state.notes.map((note) =>
+        state.selectedNoteIds.includes(note.id)
+          ? { ...note, isFavorite: false, updatedAt: Date.now() }
+          : note
+      );
+      saveToStorage(notes);
+      return { notes, selectedNoteIds: [], selectionMode: false };
+    });
+  },
+  
+  changeSelectedNotesColor: (color) => {
+    set((state) => {
+      const notes = state.notes.map((note) =>
+        state.selectedNoteIds.includes(note.id)
+          ? { ...note, color: color as Note['color'], updatedAt: Date.now() }
+          : note
+      );
+      saveToStorage(notes);
+      return { notes, selectedNoteIds: [], selectionMode: false };
+    });
+  },
   
   // Add new note
   addNote: (noteData) => {

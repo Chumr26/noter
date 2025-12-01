@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ import {
   SkeletonNoteCard,
   ConfettiAnimation,
   SwipeableNoteCard,
+  SelectionToolbar,
 } from '@/components';
 import EmptyNotesIllustration from '@/components/illustrations/EmptyNotesIllustration';
 import { Typography, Spacing, Layout } from '@/constants/theme';
@@ -45,6 +46,20 @@ export default function NotesListScreen() {
   const isLoading = useNotesStore((state) => state.isLoading);
   const searchQuery = useNotesStore((state) => state.searchQuery);
   const settings = useNotesStore((state) => state.settings);
+  
+  // Selection state
+  const selectionMode = useNotesStore((state) => state.selectionMode);
+  const selectedNoteIds = useNotesStore((state) => state.selectedNoteIds);
+  const toggleSelectionMode = useNotesStore((state) => state.toggleSelectionMode);
+  const toggleNoteSelection = useNotesStore((state) => state.toggleNoteSelection);
+  const selectAllNotes = useNotesStore((state) => state.selectAllNotes);
+  const clearSelection = useNotesStore((state) => state.clearSelection);
+  const deleteSelectedNotes = useNotesStore((state) => state.deleteSelectedNotes);
+  const pinSelectedNotes = useNotesStore((state) => state.pinSelectedNotes);
+  const unpinSelectedNotes = useNotesStore((state) => state.unpinSelectedNotes);
+  const favoriteSelectedNotes = useNotesStore((state) => state.favoriteSelectedNotes);
+  const unfavoriteSelectedNotes = useNotesStore((state) => state.unfavoriteSelectedNotes);
+  const changeSelectedNotesColor = useNotesStore((state) => state.changeSelectedNotesColor);
 
   // Get filtered notes - computed directly from store values
   const filteredNotes = useMemo(() => {
@@ -106,62 +121,24 @@ export default function NotesListScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [loadNotes]);
 
-  // Navigate to note detail
+  // Navigate to note detail or toggle selection
   const handleNotePress = useCallback((note: Note) => {
-    router.push(`/note/${note.id}`);
-  }, []);
+    if (selectionMode) {
+      toggleNoteSelection(note.id);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else {
+      router.push(`/note/${note.id}`);
+    }
+  }, [selectionMode, toggleNoteSelection]);
 
-  // Handle long press - show action menu
-  const handleNoteLongPress = useCallback(
-    (note: Note) => {
-      Alert.alert(
-        note.title || 'Note',
-        'Choose an action',
-        [
-          {
-            text: note.isPinned ? 'Unpin' : 'Pin',
-            onPress: () => {
-              togglePin(note.id);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            },
-          },
-          {
-            text: note.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
-            onPress: () => {
-              toggleFavorite(note.id);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            },
-          },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: () => {
-              Alert.alert(
-                'Delete Note',
-                'Are you sure you want to delete this note?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => {
-                      deleteNote(note.id);
-                      Haptics.notificationAsync(
-                        Haptics.NotificationFeedbackType.Success
-                      );
-                    },
-                  },
-                ]
-              );
-            },
-          },
-          { text: 'Cancel', style: 'cancel' },
-        ],
-        { cancelable: true }
-      );
-    },
-    [togglePin, toggleFavorite, deleteNote]
-  );
+  // Handle long press - enter selection mode
+  const handleNoteLongPress = useCallback((note: Note) => {
+    if (!selectionMode) {
+      toggleSelectionMode();
+      toggleNoteSelection(note.id);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+  }, [selectionMode, toggleSelectionMode, toggleNoteSelection]);
 
   // Create new note
   const handleCreateNote = useCallback(() => {
@@ -170,45 +147,72 @@ export default function NotesListScreen() {
     router.push('/note/new');
   }, []);
 
-  // Render note item with animation
+  // Render note item with animation and selection support
   const renderNote = useCallback(
-    ({ item, index }: { item: Note; index: number }) =>
-      useSwipeable ? (
+    ({ item, index }: { item: Note; index: number }) => {
+      const isSelected = selectedNoteIds.includes(item.id);
+      
+      return (
         <Animated.View
           entering={FadeInDown.delay(index * 50)
             .duration(300)
             .springify()}
           exiting={FadeOutUp.duration(200)}
         >
-          <SwipeableNoteCard
-            note={item}
-            onPress={() => handleNotePress(item)}
-            onDelete={() => deleteNote(item.id)}
-            onPin={() => togglePin(item.id)}
-            onFavorite={() => {
-              toggleFavorite(item.id);
-              if (settings.hapticsEnabled) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              }
-            }}
-            index={index}
-          />
+          {selectionMode ? (
+            <View style={styles.selectionContainer}>
+              <View style={styles.checkbox}>
+                <Ionicons
+                  name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={28}
+                  color={isSelected ? colors.primary : colors.textTertiary}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <NoteCard
+                  note={item}
+                  onPress={() => handleNotePress(item)}
+                  onLongPress={() => handleNoteLongPress(item)}
+                />
+              </View>
+            </View>
+          ) : useSwipeable ? (
+            <SwipeableNoteCard
+              note={item}
+              onPress={() => handleNotePress(item)}
+              onDelete={() => deleteNote(item.id)}
+              onPin={() => togglePin(item.id)}
+              onFavorite={() => {
+                toggleFavorite(item.id);
+                if (settings.hapticsEnabled) {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }
+              }}
+              index={index}
+            />
+          ) : (
+            <NoteCard
+              note={item}
+              onPress={() => handleNotePress(item)}
+              onLongPress={() => handleNoteLongPress(item)}
+            />
+          )}
         </Animated.View>
-      ) : (
-        <Animated.View
-          entering={FadeInDown.delay(index * 50)
-            .duration(300)
-            .springify()}
-          exiting={FadeOutUp.duration(200)}
-        >
-          <NoteCard
-            note={item}
-            onPress={() => handleNotePress(item)}
-            onLongPress={() => handleNoteLongPress(item)}
-          />
-        </Animated.View>
-      ),
-    [useSwipeable, handleNotePress, handleNoteLongPress, deleteNote, togglePin, toggleFavorite, settings.hapticsEnabled]
+      );
+    },
+    [
+      selectionMode,
+      selectedNoteIds,
+      useSwipeable,
+      handleNotePress,
+      handleNoteLongPress,
+      deleteNote,
+      togglePin,
+      toggleFavorite,
+      settings.hapticsEnabled,
+      colors.primary,
+      colors.textTertiary,
+    ]
   );
 
   // Empty state
@@ -275,20 +279,50 @@ export default function NotesListScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>Notes</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {filteredNotes.length}{' '}
-            {filteredNotes.length === 1 ? 'note' : 'notes'}
-          </Text>
-        </View>
+        {selectionMode ? (
+          <>
+            <IconButton
+              icon="close"
+              onPress={clearSelection}
+              color={colors.text}
+              backgroundColor={colors.backgroundTertiary}
+            />
+            <Text style={[styles.title, { color: colors.text }]}>
+              {selectedNoteIds.length} selected
+            </Text>
+            <IconButton
+              icon="checkmark-done"
+              onPress={selectAllNotes}
+              color={colors.primary}
+              backgroundColor={`${colors.primary}15`}
+            />
+          </>
+        ) : (
+          <>
+            <View>
+              <Text style={[styles.title, { color: colors.text }]}>Notes</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                {filteredNotes.length}{' '}
+                {filteredNotes.length === 1 ? 'note' : 'notes'}
+              </Text>
+            </View>
 
-        <IconButton
-          icon="search"
-          onPress={() => router.push('/(tabs)/search')}
-          color={colors.text}
-          backgroundColor={colors.backgroundTertiary}
-        />
+            <View style={styles.headerButtons}>
+              <IconButton
+                icon="checkmark-circle-outline"
+                onPress={toggleSelectionMode}
+                color={colors.text}
+                backgroundColor={colors.backgroundTertiary}
+              />
+              <IconButton
+                icon="search"
+                onPress={() => router.push('/(tabs)/search')}
+                color={colors.text}
+                backgroundColor={colors.backgroundTertiary}
+              />
+            </View>
+          </>
+        )}
       </View>
 
       {/* Filter Chips */}
@@ -319,13 +353,28 @@ export default function NotesListScreen() {
       />
 
       {/* Floating Action Button */}
-      <FloatingActionButton onPress={handleCreateNote} />
+      {!selectionMode && <FloatingActionButton onPress={handleCreateNote} />}
       
       {/* Confetti animation on note creation */}
       <ConfettiAnimation
         show={showConfetti}
         onComplete={() => setShowConfetti(false)}
       />
+
+      {/* Selection Toolbar */}
+      {selectionMode && (
+        <SelectionToolbar
+          selectedCount={selectedNoteIds.length}
+          onDelete={deleteSelectedNotes}
+          onPin={pinSelectedNotes}
+          onUnpin={unpinSelectedNotes}
+          onFavorite={favoriteSelectedNotes}
+          onUnfavorite={unfavoriteSelectedNotes}
+          onChangeColor={changeSelectedNotesColor}
+          onSelectAll={selectAllNotes}
+          onClearSelection={clearSelection}
+        />
+      )}
     </View>
   );
 }
@@ -340,6 +389,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Layout.screenPadding,
     paddingVertical: Spacing.md,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
   title: {
     fontSize: Typography.sizes['3xl'],
@@ -361,5 +414,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
+  },
+  selectionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  checkbox: {
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
