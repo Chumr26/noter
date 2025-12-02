@@ -1,0 +1,15 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: Dark Theme Gray -->
+  <rect width="1024" height="1024" fill="#1F2937"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="grad1" x1="200" y1="200" x2="824" y2="824" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#A5B4FC"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Stylized 'N' Shape -->
+  <path d="M300 200C255.817 200 220 235.817 220 280V744C220 788.183 255.817 824 300 824C344.183 824 380 788.183 380 744V430L600 780C615 805 640 824 670 824C714.183 824 750 788.183 750 744V280C750 235.817 714.183 200 670 200C625.817 200 590 235.817 590 280V594L370 244C355 219 330 200 300 200Z" fill="url(#grad1)"/>
+</svg>

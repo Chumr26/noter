@@ -1,0 +1,15 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: Primary Indigo -->
+  <rect width="1024" height="1024" fill="#6366F1"/>
+  
+  <!-- Note Shape -->
+  <path d="M312 200H612L812 400V824C812 868.183 776.183 904 732 904H312C267.817 904 232 868.183 232 824V280C232 235.817 267.817 200 312 200Z" fill="white"/>
+  
+  <!-- Folded Corner Shadow -->
+  <path d="M612 200V360C612 382.091 629.909 400 652 400H812" fill="#E0E7FF"/>
+  
+  <!-- Lines -->
+  <rect x="332" y="500" width="360" height="40" rx="20" fill="#6366F1" fill-opacity="0.2"/>
+  <rect x="332" y="600" width="360" height="40" rx="20" fill="#6366F1" fill-opacity="0.2"/>
+  <rect x="332" y="700" width="240" height="40" rx="20" fill="#6366F1" fill-opacity="0.2"/>
+</svg>

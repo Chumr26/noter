@@ -1,0 +1,17 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: Primary Indigo -->
+  <rect width="1024" height="1024" fill="#6366F1"/>
+  
+  <!-- Circle Background for Contrast -->
+  <circle cx="512" cy="512" r="380" fill="white" fill-opacity="0.1"/>
+  
+  <!-- Pencil / Pen Icon -->
+  <path d="M680 240L784 344L400 728L296 624L680 240Z" fill="white"/>
+  <path d="M296 624L400 728L250 774L296 624Z" fill="#A5B4FC"/>
+  <path d="M250 774L275 700L324 750L250 774Z" fill="#1F2937"/>
+  
+  <!-- Sparkles/Accents -->
+  <path d="M800 200L820 240L860 260L820 280L800 320L780 280L740 260L780 240L800 200Z" fill="#FCD34D"/>
+  <circle cx="250" cy="350" r="30" fill="#FCD34D"/>
+  <circle cx="850" cy="750" r="20" fill="#FCD34D"/>
+</svg>
