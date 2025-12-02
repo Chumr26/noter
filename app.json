@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.notesapp.mobile"
+      "bundleIdentifier": "com.notesapp.mobile",
+      "jsEngine": "hermes"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +27,9 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.notesapp.mobile"
+      "package": "com.notesapp.mobile",
+      "jsEngine": "hermes",
+      "allowBackup": false
     },
     "web": {
       "output": "static",
@@ -46,6 +49,15 @@
             "image": "./assets/images/splash-icon.png"
           }
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
       ]
     ],
     "experiments": {
@@ -55,6 +67,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "b7ec1ac6-acb1-4087-909a-8763f6902576"
       }
     }
   }
